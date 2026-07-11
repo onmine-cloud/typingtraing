@@ -1038,11 +1038,13 @@ function updateLiveStats(stageElapsed){
   document.getElementById('hud-acc').textContent = acc + '%';
 }
 
-document.getElementById('typeInput').addEventListener('input', () => {
-  const inputEl = document.getElementById('typeInput');
-  if(inputEl.disabled) return; // 문장 전환 중에는 입력을 무시
+const typeInputEl = document.getElementById('typeInput');
+let isComposingSentence = false;
+
+function evaluateTypingProgress(){
+  if(typeInputEl.disabled) return; // 문장 전환 중에는 입력을 무시
   const target = currentTarget();
-  const val = inputEl.value;
+  const val = typeInputEl.value;
   for(let i=0;i<val.length;i++){
     if(val[i] !== target[i]) erroredPositions.add(i);
   }
@@ -1051,6 +1053,26 @@ document.getElementById('typeInput').addEventListener('input', () => {
   if(val === target){
     completeStage();
   }
+}
+
+typeInputEl.addEventListener('compositionstart', () => {
+  isComposingSentence = true;
+});
+
+typeInputEl.addEventListener('compositionend', () => {
+  isComposingSentence = false;
+  evaluateTypingProgress(); // 한글 조합이 완성된 시점에만 정답 여부를 판정
+});
+
+typeInputEl.addEventListener('input', (e) => {
+  // 한글은 자모가 조합되는 중간 과정(예: ㄱ→가→값)에서도 input 이벤트가 계속 발생함.
+  // 조합이 끝나기 전 중간 글자를 정답과 비교하면 실제로는 맞게 쳤어도 오타로 잘못 기록되므로,
+  // 조합 중에는 화면 표시(색상)만 갱신하고 정답 판정/정확도 계산은 조합이 끝난 뒤에만 수행한다.
+  if(e.isComposing || isComposingSentence){
+    renderSentence();
+    return;
+  }
+  evaluateTypingProgress();
 });
 
 function completeStage(){
