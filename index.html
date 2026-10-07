@@ -574,11 +574,17 @@ async function saveScoreToLeaderboard(record){
   if(usingRemoteBackend()){
     try{
       localSetLastNickname_(playerNickname);
-      const res = await fetch(LEADERBOARD_API_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 앱스크립트 CORS 프리플라이트 회피용
-        body: JSON.stringify(record)
+      const params = new URLSearchParams({
+        action: 'save',
+        nickname: record.nickname,
+        mode: record.mode,
+        speed: record.speed,
+        accuracy: record.accuracy,
+        score: record.score,
+        grade: record.grade,
+        date: record.date
       });
+      const res = await fetch(LEADERBOARD_API_URL + '?' + params.toString());
       const data = await res.json();
       return !!(data && data.success);
     } catch(err){
@@ -1054,6 +1060,20 @@ function evaluateTypingProgress(){
     completeStage();
   }
 }
+
+// 예문을 복사해서 붙여넣는 걸로 완료되지 않도록, 붙여넣기와 드래그 앤 드롭을 막음
+typeInputEl.addEventListener('paste', (e) => {
+  e.preventDefault();
+});
+typeInputEl.addEventListener('drop', (e) => {
+  e.preventDefault();
+});
+typeInputEl.addEventListener('dragover', (e) => {
+  e.preventDefault();
+});
+typeInputEl.addEventListener('contextmenu', (e) => {
+  e.preventDefault(); // 우클릭 메뉴의 "붙여넣기"도 함께 차단
+});
 
 typeInputEl.addEventListener('compositionstart', () => {
   isComposingSentence = true;
